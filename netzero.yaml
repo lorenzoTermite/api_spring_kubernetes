@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netzero-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netzero
+  template:
+    metadata:
+      labels:
+        app: netzero
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: netzero-cluster-worker
+      containers:
+      - name: netzero
+        image: lorhenzo/nz-image:latest
+        ports:
+          - containerPort: 8080
+        env:
+          - name: SPRING_DATASOURCE_URL
+            value: "jdbc:oracle:thin:@oracle-service:1521:XE"  # usa il Service del DB
+          - name: SPRING_DATASOURCE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: oracle-secret
+                key: username
+          - name: SPRING_DATASOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: oracle-secret
+                key: password
+
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: netzero-service
+spec:
+  type: NodePort   # se vuoi accesso dall’esterno
+  selector:
+    app: netzero
+  ports:
+    - protocol: TCP
+      port: 8080         # porta interna del Service
+      targetPort: 8080   # porta sul container
+      nodePort: 30080    # porta del nodo per accesso esterno

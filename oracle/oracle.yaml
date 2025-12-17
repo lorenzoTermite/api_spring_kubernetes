@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oracle-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oracle
+  template:
+    metadata:
+      labels:
+        app: oracle
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: netzero-cluster-worker2
+      containers:
+      - name: oracle
+        image: gvenzl/oracle-xe:21-slim
+        ports:
+          - containerPort: 1521
+          - containerPort: 5500
+        env:
+          - name: ORACLE_USER
+            valueFrom:
+              secretKeyRef:
+                name: oracle-secret
+                key: username
+          - name: ORACLE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: oracle-secret
+                key: password
+        volumeMounts:           
+          - name: init-sql
+            mountPath: /docker-entrypoint-initdb.d
+      volumes:               
+        - name: init-sql
+          configMap:
+            name: oracle-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: oracle-service
+spec:
+  type: NodePort  # Serve per esporre il servizio su una porta del nodo
+  selector:
+    app: oracle
+  ports:
+    - protocol: TCP
+      port: 1521        # porta interna del pod
+      targetPort: 1521  # porta listener Oracle
+      nodePort: 31521   # porta esposta sul tuo host tra 30000 e 32767 (Kubernetes lo limita). IN KIND NON SERVE

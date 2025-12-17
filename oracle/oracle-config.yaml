@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oracle-config
+data:
+  init_tseeui02.sql: |
+    -- Creazione utente
+    CREATE USER TSEEUI02 IDENTIFIED BY Password123;
+
+    GRANT CONNECT, RESOURCE TO TSEEUI02;
+
+    ALTER USER TSEEUI02 QUOTA UNLIMITED ON USERS;
+
+    CREATE TABLE TSEEUI02.T_NZ_DP_RE (
+        ID NUMBER,
+        REFERENCE_DATE DATE,
+        DESCRIPTION VARCHAR2(255 BYTE),
+        AMOUNT NUMBER(15,2),
+        STATUS VARCHAR2(50 BYTE)
+    );
+
+    INSERT INTO TSEEUI02.T_NZ_DP_RE (ID, REFERENCE_DATE, DESCRIPTION, AMOUNT, STATUS)
+    VALUES (1, SYSDATE, 'Test iniziale', 1000.00, 'ACTIVE');
+
+    COMMIT;
